@@ -1,12 +1,12 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/order
+    url: jdbc:postgresql://localhost:5432/payment
     username: developer
     password: dev_pass
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: validate
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
   kafka:
@@ -15,18 +15,7 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
-        spring.json.type.mapping: orderConfirmation:com.ecomerce.payment_service.notification.
-  application:
-    name: order-service
+        spring.json.type.mapping: paymentConfirmation:com.ecomerce.order_service.kafka.PaymentNotificationRequest
+
 server:
-  port: 8092
-
-application:
-  config:
-    customer-url: http://localhost:8222/api/v1/customer
-    product-url: http://localhost:8222/api/v1/products
-    payment-url: http://localhost:8222/api/v1/payments
-
-
-
-
+  port: 8093

@@ -8,6 +8,8 @@ import com.ecomerce.order_service.order.OrderRequest;
 import com.ecomerce.order_service.order.OrderResponse;
 import com.ecomerce.order_service.orderline.OrderLineRequest;
 import com.ecomerce.order_service.orderline.OrderLineService;
+import com.ecomerce.order_service.payment.PaymentClient;
+import com.ecomerce.order_service.payment.PaymentRequest;
 import com.ecomerce.order_service.product.ProductClient;
 import com.ecomerce.order_service.product.PurchaseRequest;
 import com.ecomerce.order_service.repository.OrderRepository;
@@ -29,6 +31,7 @@ public class OrderService {
     private final ProductClient productClient;
     private final OrderLineService orderLineService;
     private final OrderProducer  orderProducer;
+    private final PaymentClient paymentClient;
 
     public Integer createOrder(@Valid OrderRequest request) {
         // check the customer -> OpenFein
@@ -53,7 +56,15 @@ public class OrderService {
             );
         }
 
-        //todo start payment process
+        // start payment process
+        var paymentRequest = new PaymentRequest(
+                request.amount(),
+                request.paymentMethod(),
+                order.getId(),
+                order.getReference(),
+                customer
+        );
+        paymentClient.requestOrderPayment(paymentRequest);
 
         //send the order confirmation -> notification microservice (kafka)
         orderProducer.sendOrderConfirmation(
