@@ -1,15 +1,15 @@
 services:
-  postgres:
+  postgresql:
     container_name: ms_pg_sql
     image: postgres
     environment:
       POSTGRES_USER: developer
       POSTGRES_PASSWORD: dev_pass
-      PGDATA: /var/lib/postgresql/data
+      PGDATA: /data/postgres
     volumes:
-      - postgres:/var/lib/postgresql/data
+      - postgres:/data/postgres
     ports:
-      - 5432:5432
+      - "5432:5432"
     networks:
       - microservices-net
     restart: unless-stopped
@@ -18,38 +18,53 @@ services:
     container_name: ms_pgadmin
     image: dpage/pgadmin4
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin@pgadmin.org}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     volumes:
       - pgadmin:/var/lib/pgadmin
     ports:
-      - 5050:80
+      - "5050:80"
     networks:
       - microservices-net
     restart: unless-stopped
 
-  mongodb:
-    container_name: ms_mongo_db
-    image: mongo
+  zipkin:
+    container_name: zipkin
+    image: openzipkin/zipkin
     ports:
-      - 27017:27017
+      - "9411:9411"
+    networks:
+      - microservices-net
+
+  mongo:
+    image: mongo
+    container_name: mongodb
+    ports:
+      - "27017:27017"
     volumes:
       - mongo:/data
     environment:
-      MONGO_INITDB_ROOT_USERNAME: developer
-      MONGO_INITDB_ROOT_PASSWORD: dev_pass
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: pass
+    networks:
+      - microservices-net
 
   mongo-express:
-    container_name: ms_mongo_express
     image: mongo-express
+    container_name: mongo_express
     restart: always
     ports:
-      - 8081:8081
+      - "8081:8081"
+    depends_on:
+      - mongo
     environment:
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=developer
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=dev_pass
-      - ME_CONFIG_MONGODB_SERVER=mongodb
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: pass
+      ME_CONFIG_MONGODB_SERVER: mongo
+    networks:
+      - microservices-net
+
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -59,10 +74,9 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - 22181:2181
+      - "22181:2181"
     networks:
       - microservices-net
-
   kafka:
     image: confluentinc/cp-kafka:7.4.3
     container_name: ms_kafka
@@ -81,7 +95,7 @@ services:
       - microservices-net
 
   mail-dev:
-    container_name: ms_mail_dev
+    container_name: ms-mail-dev
     image: maildev/maildev
     ports:
       - 1080:1080
